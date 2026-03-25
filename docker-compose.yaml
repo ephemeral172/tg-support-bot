@@ -34,29 +34,9 @@ services:
     ports:
       - "${PGDB_PORT}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     networks:
       - pet
-
-  pet_pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pet_pgadmin_container
-    restart: always
-    depends_on:
-      - pet_pgdb
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-    networks:
-      - pet
-      - traefik_net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pet-pgadmin.rule=Host(`pgadmin.${MAIN_DOMAIN}`)"
-      - "traefik.http.routers.pet-pgadmin.entrypoints=websecure"
-      - "traefik.http.routers.pet-pgadmin.tls=true"
-      - "traefik.http.routers.pet-pgadmin.tls.certresolver=leresolver"
-      - "traefik.http.services.pet-pgadmin.loadbalancer.server.port=80"
 
   pet_redis:
     image: redis:latest
