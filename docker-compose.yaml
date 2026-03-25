@@ -1,164 +1,164 @@
 services:
-    pet_app:
-        build: 
-            context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot
-            dockerfile: Dockerfile
-        container_name: pet_app_container
-        user: root
-        restart: always
-        depends_on:
-            - pet_pgdb
-            - pet_redis
-            - pet_loki
-        working_dir: /var/www/
-        volumes:
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
-        networks:
-            - pet
-        dns:
-            - 8.8.8.8
-            - 1.1.1.1
+  pet_app:
+    build:
+      context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot
+      dockerfile: Dockerfile
+    container_name: pet_app_container
+    user: root
+    restart: always
+    depends_on:
+      - pet_pgdb
+      - pet_redis
+      - pet_loki
+    working_dir: /var/www/
+    volumes:
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
+    networks:
+      - pet
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
-    pet_pgdb:
-        image: postgres:latest
-        container_name: pet_pgdb_container
-        restart: always
-        environment:
-            POSTGRES_DB: ${DB_DATABASE}
-            POSTGRES_USER: ${DB_USERNAME}
-            POSTGRES_PASSWORD: ${DB_PASSWORD}
-        ports:
-            - "${PGDB_PORT}:5432"
-        volumes:
-            - pgdata:/var/lib/postgresql/data
-        networks:
-            - pet
+  pet_pgdb:
+    image: postgres:latest
+    container_name: pet_pgdb_container
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${PGDB_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - pet
 
-   pet_nginx:
-        image: nginx:latest
-        container_name: pet_nginx_container
-        restart: unless-stopped
-        ports:
-            - "${NGINX_PORT}:80"
-            - "443:443"
-        volumes:
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
-            # Монтируем ПАПКУ целиком вместо файла:
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx:/etc/nginx/conf.d
-            - /etc/letsencrypt:/etc/letsencrypt:ro
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx/logs:/var/log/nginx
-        depends_on:
-            - pet_app
-            - pet_pgdb
-        networks:
-            - pet
+  pet_nginx:
+    image: nginx:latest
+    container_name: pet_nginx_container
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT}:80"
+      - "443:443"
+    volumes:
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx/logs:/var/log/nginx
+    depends_on:
+      - pet_app
+      - pet_pgdb
+      - pet_pgadmin
+    networks:
+      - pet
 
-    pet_pgadmin:
-        image: dpage/pgadmin4:latest
-        container_name: pet_pgadmin_container
-        restart: always
-        depends_on:
-            - pet_pgdb
-        environment:
-            - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-            - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-        ports:
-            - "${PGADMIN_PORT}:80"
-        networks:
-            - pet
+  pet_pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pet_pgadmin_container
+    restart: always
+    depends_on:
+      - pet_pgdb
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"
+    networks:
+      - pet
 
-    pet_redis:
-        image: redis:latest
-        container_name: pet_redis_container
-        restart: always
-        ports:
-            - "${REDIS_PORT}:6379"
-        environment:
-            - REDIS_PASSWORD=${REDIS_PASSWORD}
-        command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
-        networks:
-            - pet
+  pet_redis:
+    image: redis:latest
+    container_name: pet_redis_container
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    networks:
+      - pet
 
-    pet_redisinsight:
-        image: redislabs/redisinsight:latest
-        container_name: pet_redisinsight_container
-        ports:
-            - "${REDISINSIGHT_PORT}:8001"
-        volumes:
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/redisinsight:/db
-        restart: always
-        networks:
-            - pet
+  pet_redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: pet_redisinsight_container
+    ports:
+      - "${REDISINSIGHT_PORT}:8001"
+    volumes:
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/redisinsight:/db
+    restart: always
+    networks:
+      - pet
 
-    pet_grafana:
-        image: grafana/grafana:latest
-        container_name: pet_grafana_container
-        user: "472"
-        environment:
-            GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
-            GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
-        depends_on:
-            - pet_loki
-        networks:
-            - pet
+  pet_grafana:
+    image: grafana/grafana:latest
+    container_name: pet_grafana_container
+    user: "472"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+    depends_on:
+      - pet_loki
+    networks:
+      - pet
 
-    pet_queue:
-        build: 
-            context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot
-            dockerfile: Dockerfile
-        container_name: pet_queue_container
-        restart: always
-        depends_on:
-            - pet_app
-            - pet_redis
-        working_dir: /var/www
-        volumes:
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
-        command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
-        networks:
-            - pet
-        dns:
-            - 8.8.8.8
-            - 1.1.1.1
+  pet_queue:
+    build:
+      context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot
+      dockerfile: Dockerfile
+    container_name: pet_queue_container
+    restart: always
+    depends_on:
+      - pet_app
+      - pet_redis
+    working_dir: /var/www
+    volumes:
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
+    networks:
+      - pet
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
-    pet_node:
-        build: 
-            context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/node
-            dockerfile: Dockerfile
-        container_name: pet_node_container
-        restart: always
-        volumes:
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/node/server.js:/usr/src/app/server.js
-        depends_on:
-            - pet_redis
-        ports:
-            - "3001:3000"
-        networks:
-            - pet
+  pet_node:
+    build:
+      context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/node
+      dockerfile: Dockerfile
+    container_name: pet_node_container
+    restart: always
+    volumes:
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/node:/usr/src/app
+    depends_on:
+      - pet_redis
+    ports:
+      - "3001:3000"
+    networks:
+      - pet
 
-    pet_loki:
-        image: grafana/loki:latest
-        container_name: pet_loki_container
-        ports:
-            - "${LOKI_PORT}:3100"
-        networks:
-            - pet
+  pet_loki:
+    image: grafana/loki:latest
+    container_name: pet_loki_container
+    ports:
+      - "${LOKI_PORT}:3100"
+    networks:
+      - pet
 
-    pet_promtail:
-        image: grafana/promtail:2.9.1
-        container_name: pet_promtail_container
-        volumes:
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/promtail/promtail-config.yaml:/etc/promtail/config.yml
-            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx/logs:/var/log/nginx
-        command: -config.file=/etc/promtail/config.yml
-        depends_on:
-            - pet_loki
-        networks:
-            - pet
+  pet_promtail:
+    image: grafana/promtail:2.9.1
+    container_name: pet_promtail_container
+    volumes:
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/promtail/promtail-config.yaml:/etc/promtail/config.yml
+      - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx/logs:/var/log/nginx
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - pet_loki
+    networks:
+      - pet
 
 volumes:
-    pgdata:
+  pgdata:
 
 networks:
-    pet:
-        driver: bridge
+  pet:
+    driver: bridge
