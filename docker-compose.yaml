@@ -1,7 +1,7 @@
 services:
     pet_app:
         build: 
-            context: .
+            context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot
             dockerfile: Dockerfile
         container_name: pet_app_container
         user: root
@@ -12,7 +12,7 @@ services:
             - pet_loki
         working_dir: /var/www/
         volumes:
-            - .:/var/www
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
         networks:
             - pet
         dns:
@@ -42,9 +42,10 @@ services:
             - "${NGINX_PORT}:80"
             - "443:443"
         volumes:
-            - .:/var/www
-            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
             - /etc/letsencrypt:/etc/letsencrypt:ro
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx/logs:/var/log/nginx
         depends_on:
             - pet_app
             - pet_pgdb
@@ -84,7 +85,7 @@ services:
         ports:
             - "${REDISINSIGHT_PORT}:8001"
         volumes:
-            - ./docker/redisinsight:/db
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/redisinsight:/db
         restart: always
         networks:
             - pet
@@ -102,7 +103,9 @@ services:
             - pet
 
     pet_queue:
-        build: .
+        build: 
+            context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot
+            dockerfile: Dockerfile
         container_name: pet_queue_container
         restart: always
         depends_on:
@@ -110,7 +113,7 @@ services:
             - pet_redis
         working_dir: /var/www
         volumes:
-            - .:/var/www
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot:/var/www
         command: php artisan queue:work --sleep=3 --tries=3 --timeout=90
         networks:
             - pet
@@ -119,11 +122,13 @@ services:
             - 1.1.1.1
 
     pet_node:
-        build: ./docker/node
+        build: 
+            context: /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/node
+            dockerfile: Dockerfile
         container_name: pet_node_container
         restart: always
         volumes:
-            - ./docker/node/server.js:/usr/src/app/server.js
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/node/server.js:/usr/src/app/server.js
         depends_on:
             - pet_redis
         ports:
@@ -143,8 +148,8 @@ services:
         image: grafana/promtail:2.9.1
         container_name: pet_promtail_container
         volumes:
-            - ./docker/promtail/promtail-config.yaml:/etc/promtail/config.yml
-            - ./docker/nginx/logs:/var/log/nginx
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/promtail/promtail-config.yaml:/etc/promtail/config.yml
+            - /opt/pet_telegram_bot/portainer-compose-unpacker/stacks/telegram_support_bot/tg-support-bot/docker/nginx/logs:/var/log/nginx
         command: -config.file=/etc/promtail/config.yml
         depends_on:
             - pet_loki
