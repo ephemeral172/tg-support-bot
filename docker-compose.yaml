@@ -41,12 +41,24 @@ services:
             - "443:443"
         volumes:
             - .:/var/www
-            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf # Файл должен быть уже готов в Git
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
             - /etc/letsencrypt:/etc/letsencrypt:ro
         depends_on:
             - app
         networks:
-            - pet:
-               driver: bridge
-    # Остальные сервисы (redis, grafana и т.д.) остаются как были, 
-    # но порты пишем строго: "${PORT}:${PORT}"
+            - pet
+
+    redis:
+        image: redis:latest
+        container_name: redis
+        restart: always
+        networks:
+            - pet
+
+# ВАЖНО: Эти блоки должны быть в самом конце и без отступов!
+volumes:
+    pgdata:
+
+networks:
+    pet:
+        driver: bridge
