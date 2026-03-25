@@ -46,8 +46,7 @@ services:
         depends_on:
             - app
         networks:
-             pet
-              driver: bridge
-
+            - pet:
+               driver: bridge
     # Остальные сервисы (redis, grafana и т.д.) остаются как были, 
     # но порты пишем строго: "${PORT}:${PORT}"
